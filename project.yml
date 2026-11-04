@@ -1,0 +1,37 @@
+name: AppPoker
+options:
+  bundleIdPrefix: br.apppoker
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  SWIFT_VERSION: "5.9"
+packages:
+  AppPokerCore:
+    path: .
+targets:
+  AppPoker:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/AppPoker
+    dependencies:
+      - package: AppPokerCore
+        product: GameEngine
+      - package: AppPokerCore
+        product: BotAI
+      - package: AppPokerCore
+        product: TableSession
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: br.apppoker.AppPoker
+      PRODUCT_NAME: AppPoker
+      TARGETED_DEVICE_FAMILY: "1"
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_CFBundleDisplayName: App Poker
+      INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
+      INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+      INFOPLIST_KEY_CFBundleDevelopmentRegion: pt-BR
+      MARKETING_VERSION: "0.1.0"
+      CURRENT_PROJECT_VERSION: "1"
+      SWIFT_EMIT_LOC_STRINGS: YES
