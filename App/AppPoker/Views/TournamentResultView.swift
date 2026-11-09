@@ -7,45 +7,62 @@ struct TournamentResultView: View {
     let replay: HandReplay?
 
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: result.humanFinished ? "trophy.fill" : "flag.checkered")
-                .font(.system(size: 48))
-                .foregroundStyle(result.humanFinished ? .yellow : .secondary)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: result.humanFinished ? "trophy.fill" : "flag.checkered")
+                    .font(.system(size: 52))
+                    .foregroundStyle(result.humanFinished ? AppTheme.potGold : .secondary)
+                    .padding(.top, 24)
+                    .accessibilityHidden(true)
 
-            Text(result.humanFinished ? "Você venceu!" : "Torneio encerrado")
-                .font(.title.weight(.bold))
+                Text(result.humanFinished ? "Você venceu!" : "Torneio encerrado")
+                    .font(.largeTitle.weight(.bold))
+                    .fontDesign(.rounded)
+                    .multilineTextAlignment(.center)
 
-            VStack(spacing: 8) {
-                Text("Campeão: \(result.winnerName)")
-                Text("Sua colocação: \(result.humanPlace)º")
-                Text("Mãos jogadas: \(result.handsPlayed)")
-                Text("Nível final de blinds: \(result.finalBlindLevel)")
-            }
-            .font(.body)
-            .foregroundStyle(.secondary)
-
-            Text(result.tipPT)
-                .font(.callout)
-                .multilineTextAlignment(.center)
-                .padding()
-                .background(Color.secondary.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal)
-
-            if let replay {
-                NavigationLink {
-                    HandReplayView(replay: replay)
-                } label: {
-                    Label("Replay da última mão", systemImage: "play.rectangle")
+                VStack(spacing: 10) {
+                    resultRow(titulo: "Campeão", valor: result.winnerName)
+                    resultRow(titulo: "Sua colocação", valor: "\(result.humanPlace)º")
+                    resultRow(titulo: "Mãos jogadas", valor: "\(result.handsPlayed)")
+                    resultRow(titulo: "Nível final", valor: "\(result.finalBlindLevel)")
                 }
-                .buttonStyle(.bordered)
-            }
+                .padding(.horizontal, 8)
 
-            Spacer()
+                Text(result.tipPT)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .padding(14)
+                    .frame(maxWidth: .infinity)
+                    .background(AppTheme.coachBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, AppTheme.horizontalPadding)
+
+                if let replay {
+                    NavigationLink {
+                        HandReplayView(replay: replay)
+                    } label: {
+                        Label("Replay da última mão", systemImage: "play.rectangle")
+                            .frame(minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding(.bottom, 32)
         }
-        .padding(.top, 32)
         .navigationTitle("Resultado")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
+    }
+
+    private func resultRow(titulo: String, valor: String) -> some View {
+        HStack {
+            Text(titulo)
+                .font(.body)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(valor)
+                .font(.body.weight(.semibold))
+        }
+        .padding(.horizontal, AppTheme.horizontalPadding)
+        .accessibilityElement(children: .combine)
     }
 }

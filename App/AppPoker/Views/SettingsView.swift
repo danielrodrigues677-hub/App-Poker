@@ -8,24 +8,31 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Coach") {
+            Section {
                 Toggle("Dicas do coach", isOn: Binding(
                     get: { appModel.preferences.coachEnabled },
                     set: { appModel.setCoachEnabled($0) }
                 ))
-                Text("Ligado no primeiro uso. Ajuda contextual — não joga por você.")
+                .font(.body)
+            } header: {
+                Text("Coach")
+            } footer: {
+                Text("Ligado no primeiro uso. Mostra dicas curtas antes da sua vez — não joga por você.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
 
             Section("Aprender") {
-                NavigationLink("Glossário") {
+                NavigationLink {
                     GlossaryView()
+                } label: {
+                    Label("Glossário", systemImage: "book")
                 }
-                NavigationLink("Ver tutorial de novo") {
+                NavigationLink {
                     TutorialView {
                         appModel.completeTutorial()
                     }
+                } label: {
+                    Label("Ver tutorial de novo", systemImage: "hand.raised")
                 }
             }
 
@@ -35,9 +42,11 @@ struct SettingsView: View {
                         HandReplayView(replay: replay)
                     } label: {
                         Text("Replay mão #\(replay.handNumber)")
+                            .font(.body)
                     }
                 } else {
-                    Text("Nenhum replay salvo ainda.")
+                    Text("Nenhum replay salvo ainda. Jogue uma mão para ver o histórico aqui.")
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -46,25 +55,32 @@ struct SettingsView: View {
                 let sessions = appModel.persistence.loadSessions()
                 if sessions.isEmpty {
                     Text("Nenhuma sessão salva.")
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(sessions.prefix(8)) { item in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(item.detailPT)
+                                .font(.body)
                             Text(item.kind.uppercased())
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        .padding(.vertical, 2)
                     }
                 }
             }
 
-            Section("Sobre") {
+            Section {
                 Text("Idioma: português (PT-BR)")
+                    .font(.body)
                 Text("Monetização: 100% grátis")
+                    .font(.body)
+            } header: {
+                Text("Sobre")
+            } footer: {
                 Text("Sem multiplayer, MTT ou dinheiro real no V1.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Ajustes")
@@ -75,13 +91,16 @@ struct SettingsView: View {
 struct GlossaryView: View {
     var body: some View {
         List(CoachContent.glossario) { entry in
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.termo).font(.headline)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(entry.termo)
+                    .font(.headline)
                 Text(entry.definicao)
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 6)
+            .accessibilityElement(children: .combine)
         }
         .navigationTitle("Glossário")
         .navigationBarTitleDisplayMode(.inline)

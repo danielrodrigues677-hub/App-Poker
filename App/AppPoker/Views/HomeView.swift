@@ -8,72 +8,111 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.07, green: 0.22, blue: 0.14),
-                        Color(red: 0.04, green: 0.12, blue: 0.08),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                AppTheme.screenGradient
+                    .ignoresSafeArea()
 
-                VStack(spacing: 28) {
-                    Spacer(minLength: 40)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 36)
 
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         Text("App Poker")
-                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .font(.largeTitle.weight(.bold))
+                            .fontDesign(.rounded)
                             .foregroundStyle(.white)
-                        Text("Texas Hold'em para iniciantes — 100% grátis")
-                            .font(.system(.body, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.75))
+                            .accessibilityAddTraits(.isHeader)
+
+                        Text("Texas Hold'em para quem está começando.\nCash e Sit & Go contra bots — 100% grátis, sem dinheiro real.")
+                            .font(.body)
+                            .foregroundStyle(.white.opacity(0.78))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 28)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer()
 
-                    VStack(spacing: 14) {
+                    VStack(spacing: 12) {
                         NavigationLink {
                             CashSetupView()
                         } label: {
-                            Label("Cash", systemImage: "suit.spade.fill")
-                                .font(.system(.title3, design: .rounded).weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                            homeCard(
+                                titulo: "Cash",
+                                subtitulo: "Blinds fixos · jogue no seu ritmo",
+                                icone: "suit.spade.fill",
+                                destaque: true
+                            )
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color(red: 0.20, green: 0.55, blue: 0.32))
 
                         NavigationLink {
                             SNGSetupView()
                         } label: {
-                            Label("Torneio Sit & Go", systemImage: "trophy")
-                                .font(.system(.title3, design: .rounded).weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                            homeCard(
+                                titulo: "Torneio Sit & Go",
+                                subtitulo: "1 mesa · blinds sobem · last player standing",
+                                icone: "trophy.fill",
+                                destaque: false
+                            )
                         }
-                        .buttonStyle(.bordered)
-                        .tint(.white.opacity(0.85))
 
                         NavigationLink {
                             SettingsView()
                         } label: {
-                            Label("Ajustes / Ajuda", systemImage: "gearshape")
-                                .font(.system(.body, design: .rounded).weight(.medium))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
+                            homeCard(
+                                titulo: "Ajustes e ajuda",
+                                subtitulo: "Coach, tutorial e glossário",
+                                icone: "gearshape.fill",
+                                destaque: false,
+                                compacto: true
+                            )
                         }
-                        .buttonStyle(.bordered)
-                        .tint(.white.opacity(0.7))
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 36)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private func homeCard(
+        titulo: String,
+        subtitulo: String,
+        icone: String,
+        destaque: Bool,
+        compacto: Bool = false
+    ) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icone)
+                .font(compacto ? .title3 : .title2)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(titulo)
+                    .font((compacto ? Font.body : Font.title3).weight(.semibold))
+                    .fontDesign(.rounded)
+                Text(subtitulo)
+                    .font(.callout)
+                    .opacity(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .opacity(0.55)
+                .accessibilityHidden(true)
+        }
+        .foregroundStyle(destaque ? Color.white : Color.white.opacity(0.92))
+        .padding(.horizontal, 18)
+        .padding(.vertical, compacto ? 14 : 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(destaque ? AppTheme.accentGreen : Color.white.opacity(0.12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Color.white.opacity(destaque ? 0 : 0.18), lineWidth: 1)
+                )
+        )
     }
 }
 
