@@ -8,22 +8,44 @@ struct CashSetupView: View {
 
     var body: some View {
         Form {
-            Section("Blinds / buy-in") {
-                Picker("Preset", selection: $preset) {
+            Section {
+                Text("Escolha blinds e quantos oponentes. Você joga solo contra bots — sem multiplayer e sem dinheiro real.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+            }
+
+            Section {
+                Picker("Preset de blinds", selection: $preset) {
                     ForEach(BlindPreset.all) { item in
                         Text(item.rotuloPT).tag(item)
                     }
                 }
                 .pickerStyle(.inline)
+
+                LabeledContent("Buy-in") {
+                    Text("\(preset.buyIn) fichas")
+                        .font(.body.monospacedDigit().weight(.medium))
+                }
+            } header: {
+                Text("Blinds e buy-in")
+            } footer: {
+                Text("Buy-in padrão = 100 big blinds. Ideal para aprender sem pressão.")
+                    .font(.footnote)
             }
 
-            Section("Oponentes") {
+            Section {
                 Stepper(value: $botCount, in: 1 ... 9) {
-                    Text("\(botCount) bot\(botCount == 1 ? "" : "s") · \(botCount + 1) assentos")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(botCount) oponente\(botCount == 1 ? "" : "s")")
+                            .font(.body.weight(.medium))
+                        Text("\(botCount + 1) assentos na mesa (você + bots)")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                Text("Mesa solo contra bots (sem multiplayer).")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Oponentes")
             }
 
             Section {
@@ -33,7 +55,11 @@ struct CashSetupView: View {
                     Text("Sentar na mesa")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
                 }
+            } footer: {
+                Text("Dica: com o coach ligado (Ajustes), você recebe sugestões antes de cada ação.")
+                    .font(.footnote)
             }
         }
         .navigationTitle("Cash")

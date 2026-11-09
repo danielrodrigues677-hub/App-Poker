@@ -153,63 +153,58 @@ struct TournamentTableView: View {
     var body: some View {
         let state = model.state
         VStack(spacing: 10) {
-            HStack {
-                Text(model.session.nivelAtual.rotuloPT)
-                    .fontWeight(.semibold)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("BLINDS")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(model.session.nivelAtual.rotuloPT)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
                 Spacer()
-                Text(timerTexto)
-                    .monospacedDigit()
-                    .foregroundStyle(model.session.secondsRemainingInLevel <= 15 ? .orange : .secondary)
+                VStack(spacing: 2) {
+                    Text("PRÓXIMO NÍVEL")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(timerTexto)
+                        .font(.title3.monospacedDigit().weight(.bold))
+                        .foregroundStyle(model.session.secondsRemainingInLevel <= 15 ? .orange : .primary)
+                }
                 Spacer()
-                Text("Vivos: \(HoldemEngine.alivePlayerCount(state))")
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("VIVOS")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text("\(HoldemEngine.alivePlayerCount(state))")
+                        .font(.subheadline.weight(.semibold))
+                }
             }
-            .font(.subheadline)
-            .padding(.horizontal)
+            .padding(.horizontal, AppTheme.horizontalPadding)
 
             Text(model.session.statusMessage)
-                .font(.footnote)
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .padding(.horizontal, AppTheme.horizontalPadding)
+                .fixedSize(horizontal: false, vertical: true)
 
             if let tip = model.coachTip, appModel.preferences.coachEnabled {
-                Text(tip)
-                    .font(.caption)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.yellow.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal)
+                CoachBanner(tip: tip)
+                    .padding(.horizontal, AppTheme.horizontalPadding)
             }
 
-            HStack {
-                Text(state.street.nomePT)
-                Spacer()
-                Text("Pote: \(state.pot)").fontWeight(.semibold)
-                Spacer()
-                Text("Mão #\(state.handNumber)")
-            }
-            .font(.subheadline)
-            .padding(.horizontal)
+            MesaInfoBar(
+                street: state.street.nomePT,
+                pot: state.pot,
+                handNumber: state.handNumber
+            )
 
-            HStack(spacing: 6) {
-                ForEach(Array(state.communityCards.enumerated()), id: \.offset) { _, card in
-                    CartaView(card: card)
-                }
-                if state.communityCards.isEmpty {
-                    Text("Sem cartas comunitárias")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(red: 0.12, green: 0.38, blue: 0.22))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal)
+            FeltBoard(communityCards: state.communityCards)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
+                LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(state.players) { player in
                         JogadorLinha(
                             player: player,
@@ -218,36 +213,34 @@ struct TournamentTableView: View {
                         )
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, AppTheme.horizontalPadding)
             }
 
             if let erro = model.erro {
-                Text(erro).font(.caption).foregroundStyle(.red)
+                Text(erro)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
             }
 
             if state.street == .handOver && !model.session.isFinished {
-                HStack {
-                    if model.session.lastHandReplay != nil {
-                        Button("Replay") {
-                            replay = model.session.lastHandReplay
-                            model.showReplay = true
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    Button("Próxima mão") { model.proximaMao() }
-                        .buttonStyle(.borderedProminent)
-                }
-                .padding(.bottom)
+                HandOverBar(
+                    canReplay: model.session.lastHandReplay != nil,
+                    onReplay: {
+                        replay = model.session.lastHandReplay
+                        model.showReplay = true
+                    },
+                    onNext: model.proximaMao
+                )
             } else if model.session.isHumanTurn {
                 AcoesBar(
                     legal: model.session.legalForHuman,
                     busy: model.busy,
                     onAction: model.agir
                 )
-                .padding(.bottom, 8)
             } else if !model.session.isFinished {
                 ProgressView("Bots pensando…")
-                    .padding(.bottom)
+                    .padding(.bottom, 16)
             }
         }
         .navigationTitle("Sit & Go")
@@ -265,7 +258,6 @@ struct TournamentTableView: View {
             }
         }
         .onAppear {
-            // Reconfigura coach conforme preferências atuais
             model.onHandFinished = { replay in
                 appModel.persistReplay(replay)
             }

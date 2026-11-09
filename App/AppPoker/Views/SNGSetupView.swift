@@ -7,27 +7,51 @@ struct SNGSetupView: View {
 
     var body: some View {
         Form {
-            Section("Formato") {
-                Picker("Assentos", selection: $format) {
+            Section {
+                Text("Sit & Go de 1 mesa: todos começam juntos, blinds sobem no tempo e o último com fichas vence. Sem MTT e sem dinheiro real.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+            }
+
+            Section {
+                Picker("Formato", selection: $format) {
                     ForEach(SNGFormat.allCases) { item in
                         Text(item.rotuloPT).tag(item)
                     }
                 }
                 .pickerStyle(.inline)
 
-                Text("1 mesa · \(format.botCount) bots · stack inicial 1.500 · blinds sobem no tempo. Sem MTT e sem dinheiro real.")
+                LabeledContent("Oponentes") {
+                    Text("\(format.botCount) bots")
+                }
+                LabeledContent("Stack inicial") {
+                    Text("1.500 fichas")
+                        .font(.body.monospacedDigit())
+                }
+            } header: {
+                Text("Formato")
+            } footer: {
+                Text("6-max é mais rápido para treinar; 10-max parece mais um torneio clássico.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
 
-            Section("Blinds") {
+            Section {
                 ForEach(BlindSchedule.padrao.prefix(6)) { level in
-                    Text("\(level.rotuloPT) · \(level.durationSeconds)s")
-                        .font(.subheadline)
+                    HStack {
+                        Text(level.rotuloPT)
+                            .font(.body)
+                        Spacer()
+                        Text("\(level.durationSeconds)s")
+                            .font(.callout.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                Text("… e sobem até restar 1 vencedor.")
+            } header: {
+                Text("Agenda de blinds (início)")
+            } footer: {
+                Text("Depois os blinds continuam subindo até restar 1 vencedor.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
 
             Section {
@@ -37,6 +61,7 @@ struct SNGSetupView: View {
                     Text("Entrar no Sit & Go")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
                 }
             }
         }
