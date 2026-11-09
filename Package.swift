@@ -11,14 +11,18 @@ let package = Package(
         .library(name: "GameEngine", targets: ["GameEngine"]),
         .library(name: "BotAI", targets: ["BotAI"]),
         .library(name: "TableSession", targets: ["TableSession"]),
+        .library(name: "Coach", targets: ["Coach"]),
+        .library(name: "Persistence", targets: ["Persistence"]),
     ],
     targets: [
         .target(name: "GameEngine"),
         .target(name: "BotAI", dependencies: ["GameEngine"]),
         .target(name: "TableSession", dependencies: ["GameEngine", "BotAI"]),
+        .target(name: "Coach", dependencies: ["GameEngine"]),
+        .target(name: "Persistence", dependencies: ["GameEngine"]),
         .testTarget(
             name: "GameEngineTests",
-            dependencies: ["GameEngine", "BotAI", "TableSession"]
+            dependencies: ["GameEngine", "BotAI", "TableSession", "Coach", "Persistence"]
         ),
     ]
 )

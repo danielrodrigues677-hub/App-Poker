@@ -22,6 +22,10 @@ targets:
         product: BotAI
       - package: AppPokerCore
         product: TableSession
+      - package: AppPokerCore
+        product: Coach
+      - package: AppPokerCore
+        product: Persistence
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: br.apppoker.AppPoker
       PRODUCT_NAME: AppPoker
@@ -32,6 +36,6 @@ targets:
       INFOPLIST_KEY_UILaunchScreen_Generation: YES
       INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
       INFOPLIST_KEY_CFBundleDevelopmentRegion: pt-BR
-      MARKETING_VERSION: "0.1.0"
-      CURRENT_PROJECT_VERSION: "1"
+      MARKETING_VERSION: "0.2.0"
+      CURRENT_PROJECT_VERSION: "2"
       SWIFT_EMIT_LOC_STRINGS: YES
