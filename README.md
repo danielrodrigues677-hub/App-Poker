@@ -1,13 +1,16 @@
 # App Poker
 
-App nativo de **Texas Hold'em No-Limit** para iPhone, focado em iniciantes: cash e (em breve) Sit & Go contra bots, em **português (PT-BR)**, **100% grátis**, sem dinheiro real e sem multiplayer.
+App nativo de **Texas Hold'em No-Limit** para iPhone, focado em iniciantes: cash e Sit & Go contra bots, em **português (PT-BR)**, **100% grátis**, sem dinheiro real e sem multiplayer.
 
-## Escopo atual (Fase A)
+## Escopo atual (Fase B)
 
-- Motor Hold'em puro (`GameEngine`) + bots amigáveis (`BotAI`) + sessão cash (`TableSession`)
-- UI SwiftUI mínima: Home → Cash (presets 1/2, 2/5, 5/10 @ 100 BB) → mesa jogável vs bots
-- Torneio: placeholder “em breve” (Fase B)
-- Sem coach/tutorial completo, sem persistência de histórico, sem MTT
+- Motor Hold'em puro (`GameEngine`) + bots amigáveis (`BotAI`) + sessões cash/SNG (`TableSession`)
+- Sit & Go 1 mesa (6–max / 10–max), blind schedule com timer, eliminação até 1 vencedor + tela de resultado
+- Coach ligado no 1º uso (toggle em Ajustes), tutorial e glossário PT-BR
+- Replay da última mão (streets + ações)
+- Persistência local de preferências, sessões e replay (`UserDefaults` via módulo `Persistence`)
+- UI SwiftUI: Home → Cash / Torneio / Ajustes
+- Sem MTT, multiplayer ou dinheiro real
 
 ## Estrutura
 
@@ -15,9 +18,11 @@ App nativo de **Texas Hold'em No-Limit** para iPhone, focado em iniciantes: cash
 AppPoker/                  (Swift Package)
 ├── Package.swift
 ├── Sources/
-│   ├── GameEngine/        regras, baralho, pot, showdown
+│   ├── GameEngine/        regras, baralho, pot, showdown, SNG/blinds, hand history
 │   ├── BotAI/             heurística “amigável”
-│   └── TableSession/      orquestra cash vs bots
+│   ├── TableSession/      cash + Sit & Go
+│   ├── Coach/             dicas, tutorial, glossário
+│   └── Persistence/       preferências e histórico local
 ├── Tests/GameEngineTests/
 └── App/AppPoker/          app SwiftUI (abrir no Xcode no Mac)
 ```
@@ -42,13 +47,13 @@ swift test
 
 No Xcode: scheme do pacote → Product → Test (⌘U).
 
-Os testes cobrem baralho/deal, ações legais, ranking de mãos e uma sessão cash vs bots.
+Os testes cobrem baralho/deal, ações legais, ranking, sessão cash, Sit & Go/blinds, coach prefs e persistência.
 
 ## Requisitos
 
 - Xcode 15+ / iOS 17+
 - Swift 5.9+
 
-## Fora do V1 / Fase A
+## Fora do V1
 
 Multiplayer, dinheiro real, MTT, variantes (Omaha etc.), UI em inglês, IAP.

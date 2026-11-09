@@ -1,15 +1,25 @@
 import SwiftUI
 import GameEngine
 import TableSession
+import Coach
+import Persistence
 
 @MainActor
 final class TableViewModel: ObservableObject {
     @Published var session: CashTableSession
     @Published var busy = false
     @Published var erro: String?
+    @Published var coachTip: String?
+    @Published var showReplay = false
 
-    init(config: CashConfig) {
+    private let coachEnabled: Bool
+    private let advisor = CoachAdvisor()
+    var onHandFinished: ((HandReplay?) -> Void)?
+
+    init(config: CashConfig, coachEnabled: Bool = true) {
+        self.coachEnabled = coachEnabled
         session = CashTableSession(config: config)
+        refreshCoach()
         Task { await rodarBotsSePreciso() }
     }
 
@@ -20,6 +30,10 @@ final class TableViewModel: ObservableObject {
         do {
             try session.applyHuman(action)
             erro = nil
+            if session.state.street == .handOver {
+                onHandFinished?(session.lastHandReplay)
+            }
+            refreshCoach()
             Task { await rodarBotsSePreciso() }
         } catch {
             erro = error.localizedDescription
@@ -28,7 +42,16 @@ final class TableViewModel: ObservableObject {
 
     func proximaMao() {
         session.nextHand()
+        refreshCoach()
         Task { await rodarBotsSePreciso() }
+    }
+
+    private func refreshCoach() {
+        guard coachEnabled, session.isHumanTurn else {
+            coachTip = nil
+            return
+        }
+        coachTip = advisor.tip(for: session.state, legal: session.legalForHuman)
     }
 
     private func rodarBotsSePreciso() async {
@@ -38,7 +61,11 @@ final class TableViewModel: ObservableObject {
             while session.state.street != .handOver && !session.isHumanTurn {
                 try await Task.sleep(nanoseconds: UInt64.random(in: 600_000_000 ... 1_200_000_000))
                 _ = try session.stepBot()
+                if session.state.street == .handOver {
+                    onHandFinished?(session.lastHandReplay)
+                }
             }
+            refreshCoach()
         } catch {
             erro = error.localizedDescription
         }
@@ -46,7 +73,9 @@ final class TableViewModel: ObservableObject {
 }
 
 struct TableView: View {
+    @EnvironmentObject private var appModel: AppModel
     @StateObject private var model: TableViewModel
+    @State private var replay: HandReplay?
 
     init(config: CashConfig) {
         _model = StateObject(wrappedValue: TableViewModel(config: config))
@@ -61,6 +90,16 @@ struct TableView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
+            if let tip = model.coachTip, appModel.preferences.coachEnabled {
+                Text(tip)
+                    .font(.caption)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.yellow.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal)
+            }
+
             HStack {
                 Text(state.street.nomePT)
                 Spacer()
@@ -72,7 +111,6 @@ struct TableView: View {
             .font(.subheadline)
             .padding(.horizontal)
 
-            // Mesa comunitária
             HStack(spacing: 6) {
                 ForEach(Array(state.communityCards.enumerated()), id: \.offset) { _, card in
                     CartaView(card: card)
@@ -107,9 +145,18 @@ struct TableView: View {
             }
 
             if state.street == .handOver {
-                Button("Próxima mão") { model.proximaMao() }
-                    .buttonStyle(.borderedProminent)
-                    .padding(.bottom)
+                HStack {
+                    if model.session.lastHandReplay != nil {
+                        Button("Replay") {
+                            replay = model.session.lastHandReplay
+                            model.showReplay = true
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    Button("Próxima mão") { model.proximaMao() }
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding(.bottom)
             } else if model.session.isHumanTurn {
                 AcoesBar(
                     legal: model.session.legalForHuman,
@@ -124,127 +171,27 @@ struct TableView: View {
         }
         .navigationTitle("Mesa cash")
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-private struct JogadorLinha: View {
-    let player: Player
-    let isActor: Bool
-    let isDealer: Bool
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(player.name).fontWeight(player.kind == .human ? .bold : .regular)
-                    if isDealer {
-                        Text("D").font(.caption2.weight(.bold))
-                            .padding(4)
-                            .background(Circle().fill(.yellow.opacity(0.8)))
-                    }
-                    if isActor {
-                        Text("vez").font(.caption2).foregroundStyle(.orange)
-                    }
-                }
-                Text(statusTexto)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            if player.kind == .human || !player.holeCards.isEmpty && player.isFolded == false {
-                HStack(spacing: 4) {
-                    ForEach(Array(player.holeCards.enumerated()), id: \.offset) { _, c in
-                        // Bots: cartas ocultas até showdown simplificado — MVP mostra só do humano
-                        if player.kind == .human {
-                            CartaView(card: c, compact: true)
-                        } else {
-                            CartaVerso(compact: true)
-                        }
-                    }
-                }
-            }
-            Text("\(player.stack)")
-                .monospacedDigit()
-                .frame(minWidth: 44, alignment: .trailing)
-        }
-        .padding(8)
-        .background(isActor ? Color.orange.opacity(0.12) : Color.secondary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .opacity(player.isFolded ? 0.45 : 1)
-    }
-
-    private var statusTexto: String {
-        if player.isFolded { return "fold" }
-        if player.isAllIn { return "all-in · aposta \(player.betThisStreet)" }
-        if player.betThisStreet > 0 { return "aposta \(player.betThisStreet)" }
-        return "na mão"
-    }
-}
-
-private struct AcoesBar: View {
-    let legal: LegalActions
-    let busy: Bool
-    let onAction: (PlayerAction) -> Void
-
-    var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                if legal.canFold {
-                    Button("Desistir") { onAction(.fold) }
-                        .buttonStyle(.bordered)
-                }
-                if legal.canCheck {
-                    Button("Passar") { onAction(.check) }
-                        .buttonStyle(.bordered)
-                }
-                if legal.canCall {
-                    Button("Pagar \(legal.callAmount)") { onAction(.call) }
-                        .buttonStyle(.borderedProminent)
-                }
-            }
-            HStack {
-                if legal.canRaise {
-                    Button("Aumentar \(legal.minRaiseTo)") {
-                        onAction(.raise(to: legal.minRaiseTo))
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                if legal.canAllIn {
-                    Button("All-in") { onAction(.allIn) }
-                        .buttonStyle(.bordered)
-                        .tint(.red)
+        .sheet(isPresented: $model.showReplay) {
+            if let replay {
+                NavigationStack {
+                    HandReplayView(replay: replay)
                 }
             }
         }
-        .disabled(busy)
-        .padding(.horizontal)
-    }
-}
-
-private struct CartaView: View {
-    let card: Card
-    var compact: Bool = false
-
-    var body: some View {
-        Text(card.description)
-            .font(compact ? .caption.monospaced() : .body.monospaced())
-            .padding(.horizontal, compact ? 6 : 10)
-            .padding(.vertical, compact ? 4 : 8)
-            .background(Color.white)
-            .foregroundStyle(card.suit == .hearts || card.suit == .diamonds ? .red : .black)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-    }
-}
-
-private struct CartaVerso: View {
-    var compact: Bool = false
-    var body: some View {
-        Text("🂠")
-            .font(compact ? .caption : .body)
-            .padding(.horizontal, compact ? 6 : 10)
-            .padding(.vertical, compact ? 4 : 8)
-            .background(Color.blue.opacity(0.25))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+        .onAppear {
+            model.onHandFinished = { hand in
+                appModel.persistReplay(hand)
+                if let hand {
+                    appModel.persistSession(
+                        SessionSummary(
+                            kind: "cash",
+                            detailPT: "Cash · mão #\(hand.handNumber) · \(hand.resultSummary)",
+                            handsPlayed: hand.handNumber
+                        )
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -252,4 +199,5 @@ private struct CartaVerso: View {
     NavigationStack {
         TableView(config: CashConfig(preset: .default, botCount: 2))
     }
+    .environmentObject(AppModel(persistence: LocalPersistence(store: InMemoryStore())))
 }

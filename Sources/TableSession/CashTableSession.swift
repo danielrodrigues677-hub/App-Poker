@@ -8,6 +8,8 @@ public final class CashTableSession: @unchecked Sendable {
     public let config: CashConfig
     private var bot: FriendlyBotAI
     public var statusMessage: String
+    public private(set) var lastHandReplay: HandReplay?
+    private var recorder = HandRecorder()
 
     public init(config: CashConfig, seed: UInt64? = nil) {
         self.config = config
@@ -17,6 +19,7 @@ public final class CashTableSession: @unchecked Sendable {
         }
         self.state = HoldemEngine.startHand(table, seed: seed)
         self.bot = FriendlyBotAI(seed: (seed ?? table.deckSeed) &+ 99)
+        self.recorder.beginHand(from: self.state)
         self.statusMessage = "Nova mão #\(self.state.handNumber)"
     }
 
@@ -32,10 +35,14 @@ public final class CashTableSession: @unchecked Sendable {
 
     public func applyHuman(_ action: PlayerAction) throws {
         guard isHumanTurn else { throw ActionError.notPlayersTurn }
+        guard let actor = state.currentActorIndex else { throw ActionError.notPlayersTurn }
+        recorder.record(action: action, by: actor, in: state)
         state = try HoldemEngine.apply(action, to: state)
+        recorder.noteState(state)
         statusMessage = mensagemAposAcao(action, nome: "Você")
         if state.street == .handOver {
             statusMessage = mensagemFimDeMao()
+            lastHandReplay = recorder.finish(resultSummary: statusMessage)
         }
     }
 
@@ -45,10 +52,13 @@ public final class CashTableSession: @unchecked Sendable {
         guard let idx = state.currentActorIndex else { return false }
         guard state.players[idx].kind == .bot else { return false }
         let action = bot.decide(state: state, playerIndex: idx)
+        recorder.record(action: action, by: idx, in: state)
         state = try HoldemEngine.apply(action, to: state)
+        recorder.noteState(state)
         statusMessage = mensagemAposAcao(action, nome: state.players[idx].name)
         if state.street == .handOver {
             statusMessage = mensagemFimDeMao()
+            lastHandReplay = recorder.finish(resultSummary: statusMessage)
         }
         return true
     }
@@ -66,6 +76,8 @@ public final class CashTableSession: @unchecked Sendable {
 
     public func nextHand(seed: UInt64? = nil) {
         state = HoldemEngine.startHand(state, seed: seed)
+        recorder = HandRecorder()
+        recorder.beginHand(from: state)
         statusMessage = "Nova mão #\(state.handNumber)"
     }
 

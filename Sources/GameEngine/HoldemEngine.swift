@@ -22,6 +22,35 @@ public enum HoldemEngine {
         )
     }
 
+    public static func makeSNGTable(config: SNGConfig, humanName: String = "Você") -> TableState {
+        let stack = config.startingStack
+        let nivel = config.nivelInicial
+        var players: [Player] = [
+            Player(id: 0, name: humanName, kind: .human, stack: stack),
+        ]
+        for i in 1 ... config.botCount {
+            players.append(Player(id: i, name: "Bot \(i)", kind: .bot, stack: stack))
+        }
+        return TableState(
+            players: players,
+            dealerIndex: players.count - 1,
+            smallBlind: nivel.smallBlind,
+            bigBlind: nivel.bigBlind,
+            deckSeed: UInt64.random(in: 1 ... .max)
+        )
+    }
+
+    /// Jogadores ainda vivos no torneio (stack > 0).
+    public static func alivePlayerCount(_ state: TableState) -> Int {
+        state.players.filter { $0.stack > 0 }.count
+    }
+
+    public static func tournamentWinner(in state: TableState) -> Player? {
+        let alive = state.players.filter { $0.stack > 0 }
+        guard alive.count == 1 else { return nil }
+        return alive[0]
+    }
+
     /// Inicia uma nova mão. Exige pelo menos 2 jogadores com fichas.
     public static func startHand(_ state: TableState, seed: UInt64? = nil) -> TableState {
         var s = state

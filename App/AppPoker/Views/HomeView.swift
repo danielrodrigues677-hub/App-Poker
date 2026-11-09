@@ -1,6 +1,10 @@
 import SwiftUI
+import Persistence
+import GameEngine
 
 struct HomeView: View {
+    @EnvironmentObject private var appModel: AppModel
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -43,18 +47,26 @@ struct HomeView: View {
                         .tint(Color(red: 0.20, green: 0.55, blue: 0.32))
 
                         NavigationLink {
-                            ComingSoonView(
-                                titulo: "Torneio Sit & Go",
-                                detalhe: "Em breve na Fase B: Sit & Go de 1 mesa (6–10 jogadores) com blinds subindo."
-                            )
+                            SNGSetupView()
                         } label: {
-                            Label("Torneio (em breve)", systemImage: "trophy")
+                            Label("Torneio Sit & Go", systemImage: "trophy")
                                 .font(.system(.title3, design: .rounded).weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                         }
                         .buttonStyle(.bordered)
                         .tint(.white.opacity(0.85))
+
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Label("Ajustes / Ajuda", systemImage: "gearshape")
+                                .font(.system(.body, design: .rounded).weight(.medium))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.white.opacity(0.7))
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 36)
@@ -67,4 +79,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
+        .environmentObject(AppModel(persistence: LocalPersistence(store: InMemoryStore())))
 }

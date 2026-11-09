@@ -2,6 +2,7 @@ import SwiftUI
 import GameEngine
 
 struct CashSetupView: View {
+    @EnvironmentObject private var appModel: AppModel
     @State private var preset: BlindPreset = .default
     @State private var botCount: Int = 5
 
@@ -37,9 +38,24 @@ struct CashSetupView: View {
         }
         .navigationTitle("Cash")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let match = BlindPreset.all.first(where: { $0.id == appModel.preferences.preferredCashPresetId }) {
+                preset = match
+            }
+            botCount = appModel.preferences.preferredCashBotCount
+        }
+        .onChange(of: preset) { _, newValue in
+            appModel.preferences.preferredCashPresetId = newValue.id
+            appModel.savePreferences()
+        }
+        .onChange(of: botCount) { _, newValue in
+            appModel.preferences.preferredCashBotCount = newValue
+            appModel.savePreferences()
+        }
     }
 }
 
 #Preview {
     NavigationStack { CashSetupView() }
+        .environmentObject(AppModel(persistence: .shared))
 }
